@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"errors"
+	"github.com/ricejson/apollo-sdk-go/model"
 	"github.com/ricejson/apollo-sdk-go/toggles"
 )
 
@@ -43,4 +44,9 @@ func (c *Client) IsToggleAllow(ctx context.Context, key string, userId string, c
 		}
 	}
 	return false, nil
+}
+
+// IsToggleAllowV2 判断开关是否允许进入
+func (c *Client) IsToggleAllowV2(ctx context.Context, key string, userId string, user *model.User) (bool, error) {
+	return c.IsToggleAllow(ctx, key, userId, user.Conditions)
 }
