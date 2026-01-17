@@ -23,7 +23,8 @@ func NewClient() *Client {
 	}
 }
 
-func (c *Client) IsToggleAllow(ctx context.Context, key string, conditions map[string]any) (bool, error) {
+// IsToggleAllow 判断开关是否允许进入
+func (c *Client) IsToggleAllow(ctx context.Context, key string, userId string, conditions map[string]any) (bool, error) {
 	toggle, ok := c.toggles[key]
 	if !ok || toggle == nil {
 		return false, ErrToggleNotFound
