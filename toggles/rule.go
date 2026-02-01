@@ -3,6 +3,7 @@ package toggles
 // Comparators 支持的所有匹配符
 var Comparators = map[string]func(value1, value2 any) bool{
 	"equals": Equals,
+	"=":      Equals,
 }
 
 // Rule 规则

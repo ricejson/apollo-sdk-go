@@ -7,14 +7,14 @@ import (
 )
 
 func main() {
-	// 创建客户端实例
-	client := client.NewClient()
+	// 创建本地客户端实例
+	client := client.NewLocalClient()
 	// 构造condition
 	user := model.NewUser().
 		With("user_id", "123").
 		With("city", "Beijing")
 	// 获取结果
-	allow, err := client.IsToggleAllowV2(context.Background(), "tg_wri5tl24n", "123", user)
+	allow, err := client.IsToggleAllow(context.Background(), "tg_wri5tl24n", "123", user)
 	if err != nil {
 		// 处理错误逻辑
 	}
