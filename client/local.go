@@ -31,8 +31,8 @@ func NewLocalClient() *LocalClient {
 	}
 }
 
-func (c *LocalClient) Load(ctx context.Context, LocalClientOptions ...LocalClientOption) error {
-	for _, optionFunc := range LocalClientOptions {
+func (c *LocalClient) Load(ctx context.Context, localClientOptions ...LocalClientOption) error {
+	for _, optionFunc := range localClientOptions {
 		optionFunc(c)
 	}
 	res, err := loadConfigFiles(c.path)
