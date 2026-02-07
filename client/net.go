@@ -10,29 +10,56 @@ import (
 )
 
 type NetClient struct {
-	toggles map[string]*toggles.Toggle
+	toggles  map[string]*toggles.Toggle
+	rpcProxy proto.RPCToggleServiceClient
 }
 
-func NewNetClient() *NetClient {
-	// TODO: 替换为真实 gRPC 服务地址
-	conn, err := grpc.Dial("localhost:8992", grpc.WithInsecure())
+func NewNetClient(addr string) *NetClient {
+	conn, err := grpc.Dial(addr, grpc.WithInsecure())
 	if err != nil {
 		log.Fatalf("net.Connect err: %v", err)
 		return nil
 	}
 	client := proto.NewRPCToggleServiceClient(conn)
-	resp, err := client.FindAll(context.Background(), &proto.FindAllReq{})
-	if err != nil {
-		log.Fatalf("client.FindAll err: %v", err)
-		return nil
+
+	return &NetClient{
+		toggles:  make(map[string]*toggles.Toggle),
+		rpcProxy: client,
 	}
-	toggleList := make(map[string]*toggles.Toggle)
+}
+
+func (c *NetClient) Load(ctx context.Context) error {
+	resp, err := c.rpcProxy.FindAll(ctx, &proto.FindAllReq{})
+	if err != nil {
+		return err
+	}
+	toggleList := make(map[string]*toggles.Toggle, len(resp.Toggles))
 	for _, v := range resp.Toggles {
 		toggleList[v.Key] = convertToggle(v)
 	}
-	return &NetClient{
-		toggles: toggleList,
+	c.toggles = toggleList
+	return nil
+}
+
+func (c *NetClient) IsToggleAllow(ctx context.Context, key string, userId string, user *model.User) (bool, error) {
+	toggle, ok := c.toggles[key]
+	if !ok || toggle == nil {
+		return false, ErrToggleNotFound
 	}
+	for _, audience := range toggle.Audiences {
+		allow := true
+		for _, rule := range audience.Rules {
+			compareRes := rule.Compare(user.Conditions)
+			if !compareRes {
+				allow = false
+				break
+			}
+		}
+		if allow {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 func convertToggle(toggle *proto.Toggle) *toggles.Toggle {
@@ -71,25 +98,4 @@ func convertRules(rules []*proto.Rule) []*toggles.Rule {
 		})
 	}
 	return res
-}
-
-func (c *NetClient) IsToggleAllow(ctx context.Context, key string, userId string, user *model.User) (bool, error) {
-	toggle, ok := c.toggles[key]
-	if !ok || toggle == nil {
-		return false, ErrToggleNotFound
-	}
-	for _, audience := range toggle.Audiences {
-		allow := true
-		for _, rule := range audience.Rules {
-			compareRes := rule.Compare(user.Conditions)
-			if !compareRes {
-				allow = false
-				break
-			}
-		}
-		if allow {
-			return true, nil
-		}
-	}
-	return false, nil
 }
